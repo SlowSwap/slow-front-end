@@ -18,6 +18,8 @@ import { AutoRow, RowBetween, RowFixed } from '../Row'
 import FormattedPriceImpact from './FormattedPriceImpact'
 import { StyledBalanceMaxMini, SwapCallbackError } from './styleds'
 
+import ProgressBar from '@ramonak/react-progress-bar'
+
 export default function SwapModalFooter({
   trade,
   onConfirm,
@@ -32,6 +34,8 @@ export default function SwapModalFooter({
   disabledConfirm: boolean
 }) {
   const [showInverted, setShowInverted] = useState<boolean>(false)
+  const [progressBarValue, setProgressBarValue] = useState<number>(0)
+  const [vdfReady, setVdfReady] = useState<boolean>(false)
   const theme = useContext(ThemeContext)
   const slippageAdjustedAmounts = useMemo(() => computeSlippageAdjustedAmounts(trade, allowedSlippage), [
     allowedSlippage,
@@ -40,6 +44,22 @@ export default function SwapModalFooter({
   const { priceImpactWithoutFee, realizedLPFee } = useMemo(() => computeTradePriceBreakdown(trade), [trade])
   const severity = warningSeverity(priceImpactWithoutFee)
 
+  function delay(ms: number) {
+    return new Promise(resolve => setTimeout(resolve, ms))
+  }
+
+  async function runProgressBar() {
+    if (progressBarValue >= 100) {
+      if (!vdfReady) {
+        setVdfReady(true)
+      }
+      return
+    }
+    await delay(1000)
+    setProgressBarValue(progressBarValue + 10)
+  }
+
+  runProgressBar()
   return (
     <>
       <AutoColumn gap="0px">
@@ -108,10 +128,13 @@ export default function SwapModalFooter({
         </RowBetween>
       </AutoColumn>
 
+      <div>{vdfReady ? <div>VDF Ready</div> : <div>Generating the VDF</div>}</div>
+      <ProgressBar completed={progressBarValue} labelSize={'12px'} transitionDuration={'0.5s'} />
+
       <AutoRow>
         <ButtonError
           onClick={onConfirm}
-          disabled={disabledConfirm}
+          disabled={!(!disabledConfirm && vdfReady)} // needs disabledConfirm to be false + vdfReady to be true for the button to work
           error={severity > 2}
           style={{ margin: '10px 0 0 0' }}
           id="confirm-swap-or-send"
