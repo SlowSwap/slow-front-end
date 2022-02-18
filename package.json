@@ -128,6 +128,8 @@
     "@frogress/line": "^1.1.0",
     "@ramonak/react-progress-bar": "^4.4.0",
     "@uniswap/default-token-list": "^2.0.0",
+    "bignumber.js": "^9.0.2",
+    "crypto": "^1.0.1",
     "framer-motion": "4.1.17",
     "react-bootstrap": "^2.1.2",
     "react-native-progress-bar-animated": "^1.0.6"

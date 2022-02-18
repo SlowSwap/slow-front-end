@@ -1,5 +1,5 @@
 import { Trade, TradeType } from '@uniswap/sdk'
-import React, { useContext, useMemo, useState } from 'react'
+import React, { useContext, useMemo, useState, useEffect } from 'react'
 import { Repeat } from 'react-feather'
 import { Text } from 'rebass'
 import { ThemeContext } from 'styled-components'
@@ -17,6 +17,9 @@ import QuestionHelper from '../QuestionHelper'
 import { AutoRow, RowBetween, RowFixed } from '../Row'
 import FormattedPriceImpact from './FormattedPriceImpact'
 import { StyledBalanceMaxMini, SwapCallbackError } from './styleds'
+import * as ethjs from 'ethereumjs-util'
+import BigNumber from 'bignumber.js'
+import crypto from 'crypto'
 
 import ProgressBar from '@ramonak/react-progress-bar'
 
@@ -36,6 +39,8 @@ export default function SwapModalFooter({
   const [showInverted, setShowInverted] = useState<boolean>(false)
   const [progressBarValue, setProgressBarValue] = useState<number>(0)
   const [vdfReady, setVdfReady] = useState<boolean>(false)
+  const [vdf, setVdf] = useState<string>('')
+
   const theme = useContext(ThemeContext)
   const slippageAdjustedAmounts = useMemo(() => computeSlippageAdjustedAmounts(trade, allowedSlippage), [
     allowedSlippage,
@@ -44,22 +49,192 @@ export default function SwapModalFooter({
   const { priceImpactWithoutFee, realizedLPFee } = useMemo(() => computeTradePriceBreakdown(trade), [trade])
   const severity = warningSeverity(priceImpactWithoutFee)
 
-  function delay(ms: number) {
-    return new Promise(resolve => setTimeout(resolve, ms))
+  function numberToBuffer(n: BigNumber | string | number): Buffer {
+    return ethjs.toBuffer(new ethjs.BN(n.toString(10)))
   }
 
-  async function runProgressBar() {
-    if (progressBarValue >= 100) {
-      if (!vdfReady) {
-        setVdfReady(true)
+  function generateVdf(opts: {
+    n: BigNumber
+    t: number
+    origin: string
+    path: string[]
+    knownQtyIn: BigNumber
+    knownQtyOut: BigNumber
+    blockHash: string
+    blockNumber: number
+    onProgress?: (progress: number) => void
+  }): string {
+    const createProgressCallback = (start: number = 0, freq: number = 100) => {
+      if (!opts.onProgress) {
+        return () => undefined
       }
-      return
+      let lastUpdateT = 0
+      let total = 2 * opts.t
+      return (t: number) => {
+        if (t === 0 || t === opts.t - 1 || t - lastUpdateT > freq) {
+          lastUpdateT = t
+          opts.onProgress!((t + 1 + start) / total)
+        }
+      }
     }
-    await delay(1000)
-    setProgressBarValue(progressBarValue + 10)
+    const seed = generateSeed(opts.origin, opts.path, opts.knownQtyIn, opts.knownQtyOut)
+    const x = generateX(opts.n, seed, opts.blockHash)
+    const y = evaluateVdf(x, opts.n, opts.t, createProgressCallback())
+    const c = generateChallenge({ x, y, n: opts.n, t: opts.t })
+    const pi = generateProof(x, c, opts.n, opts.t, createProgressCallback(opts.t))
+    return ethjs.bufferToHex(
+      Buffer.concat([
+        ethjs.setLengthLeft(numberToBuffer(pi), 32),
+        ethjs.setLengthLeft(numberToBuffer(y), 32),
+        ethjs.setLengthLeft(numberToBuffer(opts.blockNumber), 32)
+      ])
+    )
   }
 
-  runProgressBar()
+  function generateChallenge(opts: { x: BigNumber; y: BigNumber; n: BigNumber; t: number }): BigNumber {
+    let n = new BigNumber(
+      ethjs.bufferToHex(
+        ethjs.keccak256(
+          Buffer.concat([
+            ethjs.setLengthLeft(numberToBuffer(opts.x), 32),
+            ethjs.setLengthLeft(numberToBuffer(opts.y), 32),
+            ethjs.setLengthLeft(numberToBuffer(opts.n), 32),
+            ethjs.setLengthLeft(numberToBuffer(opts.t), 32)
+          ])
+        )
+      )
+    )
+    if (n.mod(2).isZero()) {
+      n = n.plus(1)
+    }
+    return n
+  }
+
+  function generateSeed(origin: string, path: string[], knownQtyIn: BigNumber, knownQtyOut: BigNumber): string {
+    return ethjs.bufferToHex(
+      ethjs.keccak256(
+        Buffer.concat([
+          ethjs.setLengthLeft(ethjs.toBuffer(origin), 20),
+          ethjs.setLengthLeft(ethjs.toBuffer(path.length), 32),
+          ...path.map(p => ethjs.setLengthLeft(ethjs.toBuffer(p), 20)),
+          ethjs.setLengthLeft(numberToBuffer(knownQtyIn), 32),
+          ethjs.setLengthLeft(numberToBuffer(knownQtyOut), 32)
+        ])
+      )
+    )
+  }
+
+  function generateX(n: BigNumber, seed: string, blockHash: string): BigNumber {
+    return new BigNumber(
+      ethjs.bufferToHex(
+        ethjs.keccak256(
+          Buffer.concat([
+            ethjs.setLengthLeft(ethjs.toBuffer(seed), 32),
+            ethjs.setLengthLeft(ethjs.toBuffer(blockHash), 32)
+          ])
+        )
+      )
+    ).mod(n)
+  }
+
+  function evaluateVdf(x: BigNumber, N: BigNumber, T: number, onProgress?: (t: number) => void): BigNumber {
+    let y = x
+    for (let i = 0; i < T; ++i) {
+      y = y.pow(2).modulo(N)
+      if (onProgress) {
+        onProgress(i)
+      }
+    }
+    return y
+  }
+
+  function generateProof(
+    x: BigNumber,
+    c: BigNumber,
+    N: BigNumber,
+    T: number,
+    onProgress?: (t: number) => void
+  ): BigNumber {
+    let pi = new BigNumber(1)
+    let r = new BigNumber(1)
+    for (let i = 0; i < T; ++i) {
+      const r2 = r.times(2)
+      const bit = r2.div(c).integerValue(BigNumber.ROUND_DOWN)
+      r = r2.modulo(c)
+      pi = pi
+        .pow(2)
+        .times(x.pow(bit))
+        .modulo(N)
+      if (onProgress) {
+        onProgress(i)
+      }
+    }
+    return pi
+  }
+
+  function randomHash(len: number = 32): string {
+    return '0x' + crypto.randomBytes(len).toString('hex')
+  }
+
+  function randomQuantity(decimals: number = 18): BigNumber {
+    const n = new BigNumber(10).pow(decimals)
+    return new BigNumber('0x' + crypto.randomBytes(32)).mod(n)
+  }
+
+  useEffect(() => {
+    function delay(time: number) {
+      return new Promise(resolve => setTimeout(resolve, time))
+    }
+    console.log('second called', progressBarValue)
+    const wait = async () => {
+      await delay(200)
+    }
+    wait()
+  }, [progressBarValue])
+
+  useEffect(() => {
+    console.log('called')
+    // runProgressBar()
+    function delay(time: number) {
+      return new Promise(resolve => setTimeout(resolve, time))
+    }
+
+    const onProgress = (newVal: number): void => {
+      console.log('onProgress called', newVal)
+      setProgressBarValue(newVal * 100)
+    }
+    const N = new BigNumber('44771746775035800231893057667067514385523709770528832291415080542575843241867')
+    const T = 1e5
+    const origin = randomHash(20)
+    const blockHash = randomHash()
+    const blockNumber = Math.floor(Math.random() * 4e6)
+    const knownQtyIn = randomQuantity()
+    const knownQtyOut = randomQuantity()
+    const path = [...new Array(3)].map(i => randomHash(20))
+
+    const runVdfGenerator = async () => {
+      await delay(200)
+      const vdfResult = generateVdf({
+        n: N,
+        t: T,
+        blockHash,
+        blockNumber,
+        knownQtyIn,
+        knownQtyOut,
+        origin,
+        path,
+        onProgress
+      })
+
+      setVdf(vdfResult)
+      setVdfReady(true)
+      console.log('vdf result:', vdf)
+    }
+
+    runVdfGenerator()
+    // eslint-disable-next-line
+  }, [])
+
   return (
     <>
       <AutoColumn gap="0px">
@@ -128,7 +303,22 @@ export default function SwapModalFooter({
         </RowBetween>
       </AutoColumn>
 
-      <div>{vdfReady ? <div>VDF Ready</div> : <div>Generating the VDF</div>}</div>
+      <RowBetween>
+        <RowFixed>
+          <TYPE.black fontSize={14} fontWeight={400} color={theme.text2}>
+            {'VDF Generation'}
+          </TYPE.black>
+          <QuestionHelper text="Your VDF is currently being generated. Once the VDF is generated, you will be able to confirm your swap. Please wait for the progress bar to reach the end." />
+        </RowFixed>
+        <RowFixed>
+          {vdfReady ? (
+            <TYPE.blue fontSize={14}>{'Ready'}</TYPE.blue>
+          ) : (
+            <TYPE.blue fontSize={14}>{'In Progress'}</TYPE.blue>
+          )}
+        </RowFixed>
+      </RowBetween>
+
       <ProgressBar completed={progressBarValue} labelSize={'12px'} transitionDuration={'0.5s'} />
 
       <AutoRow>
