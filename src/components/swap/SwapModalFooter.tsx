@@ -99,8 +99,20 @@ export default function SwapModalFooter({
           setVdf(output.proof)
           localStorage.setItem('vdf', output.proof)
           setVdfReady(true)
+          Promise.all([
+              library!.getBlock(blockNumber),
+              library!.getBlockNumber(),
+          ]).then(([block, n]) => {
+              console.log(blockNumber, n, blockHash, block.hash);
+          });
         }
       })
+          Promise.all([
+              library!.getBlock(blockNumber),
+              library!.getBlockNumber(),
+          ]).then(([block, n]) => {
+              console.log(blockNumber, n, blockHash, block.hash);
+          });
       worker.postMessage({
         id: crypto.randomBytes(32).toString('hex'),
         n: N.toString(),
