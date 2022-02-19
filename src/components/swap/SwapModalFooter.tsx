@@ -54,23 +54,23 @@ export default function SwapModalFooter({
   const { priceImpactWithoutFee, realizedLPFee } = useMemo(() => computeTradePriceBreakdown(trade), [trade])
   const severity = warningSeverity(priceImpactWithoutFee)
 
-  type Numberish = string | number | bigint | { toString(b?: number): string; };
+  type Numberish = string | number | bigint | { toString(b?: number): string }
 
   function toBigInt(n: Numberish): bigint {
     if (typeof n === 'bigint') {
-        return n;
+      return n
     }
     if (typeof n === 'number') {
-        return BigInt(n);
+      return BigInt(n)
     }
     if (typeof n === 'string') {
-        return BigInt(n);
+      return BigInt(n)
     }
-    return BigInt(n.toString(10));
+    return BigInt(n.toString(10))
   }
 
   function numberToBuffer(n: Numberish): Buffer {
-      return ethjs.toBuffer(new ethjs.BN(toBigInt(n).toString(10)));
+    return ethjs.toBuffer(new ethjs.BN(toBigInt(n).toString(10)))
   }
 
   function delay(time: number) {
@@ -119,23 +119,27 @@ export default function SwapModalFooter({
   useEffect(() => {
     const N = new BigNumber('44771746775035800231893057667067514385523709770528832291415080542575843241867')
     const T = 1e5
-    var origin = (account === undefined || account === null) ? "" : account
+    const origin = account === undefined || account === null ? '' : account
     const blockHash = randomHash()
     const blockNumber = Math.floor(Math.random() * 4e6)
-    var knownQtyIn: BigNumber
-    var knownQtyOut: BigNumber
+    let knownQtyIn: BigNumber
+    let knownQtyOut: BigNumber
 
     if (trade.tradeType === TradeType.EXACT_INPUT) {
       // known quantity in
-      knownQtyIn = new BigNumber(Number(trade.inputAmount.toExact())*Math.pow(10,trade.inputAmount.currency.decimals))
+      knownQtyIn = new BigNumber(
+        Number(trade.inputAmount.toExact()) * Math.pow(10, trade.inputAmount.currency.decimals)
+      )
       knownQtyOut = new BigNumber(0)
     } else {
       // known quantity out
-      knownQtyOut = new BigNumber(Number(trade.outputAmount.toExact())*Math.pow(10,trade.outputAmount.currency.decimals))
+      knownQtyOut = new BigNumber(
+        Number(trade.outputAmount.toExact()) * Math.pow(10, trade.outputAmount.currency.decimals)
+      )
       knownQtyIn = new BigNumber(0)
     }
 
-    const path = trade.route.path.map(i => i.address);
+    const path = trade.route.path.map(i => i.address)
     // console.log(path)
 
     const runVdfGenerator = async () => {
