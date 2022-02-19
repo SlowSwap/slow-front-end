@@ -1,6 +1,6 @@
 import { ChainId } from '@uniswap/sdk'
 import { createStore, Store } from 'redux'
-import { addPopup, ApplicationModal, removePopup, setOpenModal, updateBlockNumber } from './actions'
+import { addPopup, ApplicationModal, removePopup, setOpenModal, updateBlock } from './actions'
 import reducer, { ApplicationState } from './reducer'
 
 describe('application reducer', () => {
@@ -11,6 +11,9 @@ describe('application reducer', () => {
       popupList: [],
       blockNumber: {
         [ChainId.MAINNET]: 3
+      },
+      blockHash: {
+        [ChainId.MAINNET]: "0"
       },
       openModal: null
     })
@@ -52,17 +55,17 @@ describe('application reducer', () => {
     })
   })
 
-  describe('updateBlockNumber', () => {
+  describe('updateBlock', () => {
     it('updates block number', () => {
-      store.dispatch(updateBlockNumber({ chainId: ChainId.MAINNET, blockNumber: 4 }))
+      store.dispatch(updateBlock({ chainId: ChainId.MAINNET, blockNumber: 4, blockHash: "1" }))
       expect(store.getState().blockNumber[ChainId.MAINNET]).toEqual(4)
     })
     it('no op if late', () => {
-      store.dispatch(updateBlockNumber({ chainId: ChainId.MAINNET, blockNumber: 2 }))
+      store.dispatch(updateBlock({ chainId: ChainId.MAINNET, blockNumber: 2, blockHash: "1" }))
       expect(store.getState().blockNumber[ChainId.MAINNET]).toEqual(3)
     })
     it('works with non-set chains', () => {
-      store.dispatch(updateBlockNumber({ chainId: ChainId.ROPSTEN, blockNumber: 2 }))
+      store.dispatch(updateBlock({ chainId: ChainId.ROPSTEN, blockNumber: 2, blockHash: "1" }))
       expect(store.getState().blockNumber).toEqual({
         [ChainId.MAINNET]: 3,
         [ChainId.ROPSTEN]: 2

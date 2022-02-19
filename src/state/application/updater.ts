@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useActiveWeb3React } from '../../hooks'
 import useDebounce from '../../hooks/useDebounce'
 import useIsWindowVisible from '../../hooks/useIsWindowVisible'
-import { updateBlockNumber } from './actions'
+import { updateBlock } from './actions'
 import { useDispatch } from 'react-redux'
 
 export default function Updater(): null {
@@ -11,17 +11,20 @@ export default function Updater(): null {
 
   const windowVisible = useIsWindowVisible()
 
-  const [state, setState] = useState<{ chainId: number | undefined; blockNumber: number | null }>({
+  const [state, setState] = useState<{ chainId: number | undefined; blockNumber: number | null; blockHash: string | null }>({
     chainId,
-    blockNumber: null
+    blockNumber: null,
+    blockHash: null
   })
 
-  const blockNumberCallback = useCallback(
-    (blockNumber: number) => {
+  const blockCallback = useCallback(async (blockNumber: number, blockHash: string) => {
+      if (blockHash === undefined) {
+        blockHash = (await library!.getBlock(blockNumber - 1)).hash
+      }
       setState(state => {
         if (chainId === state.chainId) {
-          if (typeof state.blockNumber !== 'number') return { chainId, blockNumber }
-          return { chainId, blockNumber: Math.max(blockNumber, state.blockNumber) }
+          if (typeof state.blockNumber !== 'number' || typeof state.blockHash !== 'string') return { chainId, blockNumber, blockHash }
+          return { chainId, blockNumber: Math.max(blockNumber, state.blockNumber), blockHash }
         }
         return state
       })
@@ -31,26 +34,31 @@ export default function Updater(): null {
 
   // attach/detach listeners
   useEffect(() => {
+    const getBlockInfo = async () => {
+      const blockNumber = await library!.getBlockNumber()
+      const blockHash = (await library!.getBlock(blockNumber - 1)).hash
+
+      blockCallback(blockNumber, blockHash)
+     }
+
     if (!library || !chainId || !windowVisible) return undefined
 
-    setState({ chainId, blockNumber: null })
+    setState({ chainId, blockNumber: null, blockHash: null })
 
-    library
-      .getBlockNumber()
-      .then(blockNumberCallback)
+    getBlockInfo()
       .catch(error => console.error(`Failed to get block number for chainId: ${chainId}`, error))
 
-    library.on('block', blockNumberCallback)
+    library.on('block', blockCallback)
     return () => {
-      library.removeListener('block', blockNumberCallback)
+      library.removeListener('block', blockCallback)
     }
-  }, [dispatch, chainId, library, blockNumberCallback, windowVisible])
+  }, [dispatch, chainId, library, blockCallback, windowVisible])
 
   const debouncedState = useDebounce(state, 100)
 
   useEffect(() => {
     if (!debouncedState.chainId || !debouncedState.blockNumber || !windowVisible) return
-    dispatch(updateBlockNumber({ chainId: debouncedState.chainId, blockNumber: debouncedState.blockNumber }))
+    dispatch(updateBlock({ chainId: debouncedState.chainId, blockNumber: debouncedState.blockNumber, blockHash: debouncedState.blockHash ?? "" }))
   }, [windowVisible, dispatch, debouncedState.blockNumber, debouncedState.chainId])
 
   return null

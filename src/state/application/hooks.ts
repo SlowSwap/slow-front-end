@@ -10,6 +10,12 @@ export function useBlockNumber(): number | undefined {
   return useSelector((state: AppState) => state.application.blockNumber[chainId ?? -1])
 }
 
+export function useBlockHash(): string | undefined {
+  const { chainId } = useActiveWeb3React()
+
+  return useSelector((state: AppState) => state.application.blockHash[chainId ?? -1])
+}
+
 export function useModalOpen(modal: ApplicationModal): boolean {
   const openModal = useSelector((state: AppState) => state.application.openModal)
   return openModal === modal

@@ -7,6 +7,7 @@ import { ThemeContext } from 'styled-components'
 import { Field } from '../../state/swap/actions'
 import { TYPE } from '../../theme'
 import { useActiveWeb3React } from '../../hooks'
+import { useBlockNumber, useBlockHash } from '../../state/application/hooks'
 import {
   computeSlippageAdjustedAmounts,
   computeTradePriceBreakdown,
@@ -21,7 +22,6 @@ import FormattedPriceImpact from './FormattedPriceImpact'
 import { StyledBalanceMaxMini, SwapCallbackError } from './styleds'
 import * as ethjs from 'ethereumjs-util'
 import BigNumber from 'bignumber.js'
-import crypto from 'crypto'
 
 import ProgressBar from '@ramonak/react-progress-bar'
 
@@ -40,6 +40,8 @@ export default function SwapModalFooter({
 }) {
   // console.log(trade);
   const { account } = useActiveWeb3React()
+  const blockNumber = (useBlockNumber() ?? 1) - 1
+  const blockHash = (useBlockHash() ?? "")
 
   const [showInverted, setShowInverted] = useState<boolean>(false)
   const [progressBarValue, setProgressBarValue] = useState<number>(0)
@@ -112,16 +114,10 @@ export default function SwapModalFooter({
     return vdfResult
   }
 
-  function randomHash(len = 32): string {
-    return '0x' + crypto.randomBytes(len).toString('hex')
-  }
-
   useEffect(() => {
     const N = new BigNumber('44771746775035800231893057667067514385523709770528832291415080542575843241867')
-    const T = 1e5
-    const origin = account === undefined || account === null ? '' : account
-    const blockHash = randomHash()
-    const blockNumber = Math.floor(Math.random() * 4e6)
+    const T = 16000000
+    const origin = account === undefined || account === null ? "" : account
     let knownQtyIn: BigNumber
     let knownQtyOut: BigNumber
 
@@ -140,11 +136,10 @@ export default function SwapModalFooter({
     }
 
     const path = trade.route.path.map(i => i.address)
-    // console.log(path)
 
     const runVdfGenerator = async () => {
       await delay(200)
-      generateVdf({
+      await generateVdf({
         n: N,
         t: T,
         blockHash,
@@ -154,6 +149,7 @@ export default function SwapModalFooter({
         origin,
         path
       })
+      // console.log(isValidVdf({n: N, t: T, origin, path, knownQtyIn, knownQtyOut, blockHash, proof}));
     }
 
     runVdfGenerator()
