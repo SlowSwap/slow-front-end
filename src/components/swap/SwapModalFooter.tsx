@@ -39,7 +39,7 @@ export default function SwapModalFooter({
   const [showInverted, setShowInverted] = useState<boolean>(false)
   const [progressBarValue, setProgressBarValue] = useState<number>(0)
   const [vdfReady, setVdfReady] = useState<boolean>(false)
-  const [vdf, setVdf] = useState<string>('')
+  const [, setVdf] = useState<string>('')
 
   const theme = useContext(ThemeContext)
   const slippageAdjustedAmounts = useMemo(() => computeSlippageAdjustedAmounts(trade, allowedSlippage), [
@@ -53,7 +53,11 @@ export default function SwapModalFooter({
     return ethjs.toBuffer(new ethjs.BN(n.toString(10)))
   }
 
-  function generateVdf(opts: {
+  function delay(time: number) {
+    return new Promise(resolve => setTimeout(resolve, time))
+  }
+
+  async function generateVdf(opts: {
     n: BigNumber
     t: number
     origin: string
@@ -62,33 +66,30 @@ export default function SwapModalFooter({
     knownQtyOut: BigNumber
     blockHash: string
     blockNumber: number
-    onProgress?: (progress: number) => void
-  }): string {
-    const createProgressCallback = (start: number = 0, freq: number = 100) => {
-      if (!opts.onProgress) {
-        return () => undefined
-      }
-      let lastUpdateT = 0
-      let total = 2 * opts.t
-      return (t: number) => {
-        if (t === 0 || t === opts.t - 1 || t - lastUpdateT > freq) {
-          lastUpdateT = t
-          opts.onProgress!((t + 1 + start) / total)
-        }
-      }
-    }
+  }): Promise<string> {
     const seed = generateSeed(opts.origin, opts.path, opts.knownQtyIn, opts.knownQtyOut)
     const x = generateX(opts.n, seed, opts.blockHash)
-    const y = evaluateVdf(x, opts.n, opts.t, createProgressCallback())
+    setProgressBarValue(20)
+    await delay(1000)
+    const y = evaluateVdf(x, opts.n, opts.t)
+    setProgressBarValue(33)
+    await delay(1000)
     const c = generateChallenge({ x, y, n: opts.n, t: opts.t })
-    const pi = generateProof(x, c, opts.n, opts.t, createProgressCallback(opts.t))
-    return ethjs.bufferToHex(
+    setProgressBarValue(66)
+    await delay(1000)
+    const pi = generateProof(x, c, opts.n, opts.t)
+    const vdfResult = ethjs.bufferToHex(
       Buffer.concat([
         ethjs.setLengthLeft(numberToBuffer(pi), 32),
         ethjs.setLengthLeft(numberToBuffer(y), 32),
         ethjs.setLengthLeft(numberToBuffer(opts.blockNumber), 32)
       ])
     )
+    setVdf(vdfResult)
+    setVdfReady(true)
+    setProgressBarValue(100)
+    await delay(1000)
+    return vdfResult
   }
 
   function generateChallenge(opts: { x: BigNumber; y: BigNumber; n: BigNumber; t: number }): BigNumber {
@@ -137,24 +138,17 @@ export default function SwapModalFooter({
     ).mod(n)
   }
 
-  function evaluateVdf(x: BigNumber, N: BigNumber, T: number, onProgress?: (t: number) => void): BigNumber {
+  function evaluateVdf(x: BigNumber, N: BigNumber, T: number): BigNumber {
     let y = x
     for (let i = 0; i < T; ++i) {
       y = y.pow(2).modulo(N)
-      if (onProgress) {
-        onProgress(i)
+      if (i % 10000 === 0) {
       }
     }
     return y
   }
 
-  function generateProof(
-    x: BigNumber,
-    c: BigNumber,
-    N: BigNumber,
-    T: number,
-    onProgress?: (t: number) => void
-  ): BigNumber {
+  function generateProof(x: BigNumber, c: BigNumber, N: BigNumber, T: number): BigNumber {
     let pi = new BigNumber(1)
     let r = new BigNumber(1)
     for (let i = 0; i < T; ++i) {
@@ -165,9 +159,6 @@ export default function SwapModalFooter({
         .pow(2)
         .times(x.pow(bit))
         .modulo(N)
-      if (onProgress) {
-        onProgress(i)
-      }
     }
     return pi
   }
@@ -182,27 +173,6 @@ export default function SwapModalFooter({
   }
 
   useEffect(() => {
-    function delay(time: number) {
-      return new Promise(resolve => setTimeout(resolve, time))
-    }
-    console.log('second called', progressBarValue)
-    const wait = async () => {
-      await delay(200)
-    }
-    wait()
-  }, [progressBarValue])
-
-  useEffect(() => {
-    console.log('called')
-    // runProgressBar()
-    function delay(time: number) {
-      return new Promise(resolve => setTimeout(resolve, time))
-    }
-
-    const onProgress = (newVal: number): void => {
-      console.log('onProgress called', newVal)
-      setProgressBarValue(newVal * 100)
-    }
     const N = new BigNumber('44771746775035800231893057667067514385523709770528832291415080542575843241867')
     const T = 1e5
     const origin = randomHash(20)
@@ -214,7 +184,7 @@ export default function SwapModalFooter({
 
     const runVdfGenerator = async () => {
       await delay(200)
-      const vdfResult = generateVdf({
+      generateVdf({
         n: N,
         t: T,
         blockHash,
@@ -222,13 +192,8 @@ export default function SwapModalFooter({
         knownQtyIn,
         knownQtyOut,
         origin,
-        path,
-        onProgress
+        path
       })
-
-      setVdf(vdfResult)
-      setVdfReady(true)
-      console.log('vdf result:', vdf)
     }
 
     runVdfGenerator()
@@ -319,7 +284,13 @@ export default function SwapModalFooter({
         </RowFixed>
       </RowBetween>
 
-      <ProgressBar completed={progressBarValue} labelSize={'12px'} transitionDuration={'0.5s'} />
+      <ProgressBar
+        completed={progressBarValue}
+        labelSize={'12px'}
+        transitionDuration={'0.2s'}
+        labelAlignment={'outside'}
+        labelColor={'#6a1b9a'}
+      />
 
       <AutoRow>
         <ButtonError
