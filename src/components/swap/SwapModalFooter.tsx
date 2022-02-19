@@ -60,13 +60,13 @@ export default function SwapModalFooter({
   ])
   const { priceImpactWithoutFee, realizedLPFee } = useMemo(() => computeTradePriceBreakdown(trade), [trade])
   const severity = warningSeverity(priceImpactWithoutFee)
-  const blockNumber = (useBlockNumber() ?? 1)
+  const blockNumber = useBlockNumber() ?? 1
   const blockHash = useBlockHash() ?? ''
 
   useEffect(() => {
     const origin = account === undefined || account === null ? '' : account
-    let N;
-    let T;
+    let N
+    let T
     let knownQtyIn: string
     let knownQtyOut: string
 
@@ -88,7 +88,7 @@ export default function SwapModalFooter({
     const router = getRouterContract(chainId!, library!)
     ;(async () => {
       if (!N || !T) {
-          [N, T] = await Promise.all([router.N(), router.T()])
+        ;[N, T] = await Promise.all([router.N(), router.T()])
       }
       const worker = new VdfWorker()
       worker.addEventListener('message', ev => {
