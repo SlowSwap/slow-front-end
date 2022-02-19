@@ -7,7 +7,6 @@ import { ThemeContext } from 'styled-components'
 import { Field } from '../../state/swap/actions'
 import { TYPE } from '../../theme'
 import { useActiveWeb3React } from '../../hooks'
-import { useBlockNumber, useBlockHash } from '../../state/application/hooks'
 import {
   computeSlippageAdjustedAmounts,
   computeTradePriceBreakdown,
@@ -47,8 +46,6 @@ export default function SwapModalFooter({
   disabledConfirm: boolean
 }) {
   const { chainId, account, library } = useActiveWeb3React()
-  const blockNumber = (useBlockNumber() ?? 1) - 1
-  const blockHash = useBlockHash() ?? ''
 
   const [showInverted, setShowInverted] = useState<boolean>(false)
   const [progressBarValue, setProgressBarValue] = useState<number>(0)
@@ -86,13 +83,17 @@ export default function SwapModalFooter({
     const router = getRouterContract(chainId!, library!);
 
     (async () => {
-          const [N, T] = await Promise.all([router.N(), router.T()]);
+          const [N, T, currentBlockNumber] = await Promise.all([router.N(), router.T(), library!.getBlockNumber()]);
+          const blockNumber = currentBlockNumber - 1;
+          const { hash: blockHash } = await library!!.getBlock(blockNumber);
           const worker = new VdfWorker();
           worker.addEventListener('message', ev => {
               const output = ev.data as VdfWorkerOutput;
               setProgressBarValue(Math.round(output.progress * 100));
               if (output.proof) {
+                  worker.terminate();
                   setVdf(output.proof);
+                  localStorage.setItem('vdf', output.proof);
                   setVdfReady(true);
               }
           });

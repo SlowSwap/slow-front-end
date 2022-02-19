@@ -26,5 +26,4 @@ ctx.addEventListener('message', ev => {
         },
     });
     ctx.postMessage({ id: data.id, progress: 1.0, proof });
-    ctx.terminate();
 });
