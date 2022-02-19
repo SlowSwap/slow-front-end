@@ -108,6 +108,7 @@ export default function SwapModalFooter({
       ])
     )
     setVdf(vdfResult)
+    localStorage.setItem("vdf", vdfResult)
     setVdfReady(true)
     setProgressBarValue(100)
     await delay(1000)
@@ -115,8 +116,8 @@ export default function SwapModalFooter({
   }
 
   useEffect(() => {
-    const N = new BigNumber('44771746775035800231893057667067514385523709770528832291415080542575843241867')
-    const T = 16000000
+    const N = new BigNumber('1')
+    const T = 20000000
     const origin = account === undefined || account === null ? "" : account
     let knownQtyIn: BigNumber
     let knownQtyOut: BigNumber

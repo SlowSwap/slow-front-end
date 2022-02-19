@@ -1,4 +1,6 @@
-import { TokenAmount, Pair, Currency } from '@uniswap/sdk'
+import { TokenAmount, Pair, Currency, Token } from '@uniswap/sdk'
+import { getCreate2Address } from '@ethersproject/address'
+import { pack, keccak256 } from '@ethersproject/solidity'
 import { useMemo } from 'react'
 import { abi as IUniswapV2PairABI } from '@slowswap/core/build/IUniswapV2Pair.json'
 import { Interface } from '@ethersproject/abi'
@@ -8,6 +10,19 @@ import { useMultipleContractSingleData } from '../state/multicall/hooks'
 import { wrappedCurrency } from '../utils/wrappedCurrency'
 
 const PAIR_INTERFACE = new Interface(IUniswapV2PairABI)
+
+const computePairAddress = (
+  tokenA: Token,
+  tokenB: Token
+): string => {
+  const factoryAddress = process.env.REACT_APP_FACTORY_ADDRESS
+  const [token0, token1] = tokenA.sortsBefore(tokenB) ? [tokenA, tokenB] : [tokenB, tokenA] // does safety checks
+  return getCreate2Address(
+    factoryAddress ?? "",
+    keccak256(['bytes'], [pack(['address', 'address'], [token0.address, token1.address])]),
+    process.env.REACT_APP_INIT_CODE_HASH ?? ""
+  )
+}
 
 export enum PairState {
   LOADING,
@@ -27,11 +42,11 @@ export function usePairs(currencies: [Currency | undefined, Currency | undefined
       ]),
     [chainId, currencies]
   )
-
+      
   const pairAddresses = useMemo(
     () =>
       tokens.map(([tokenA, tokenB]) => {
-        return tokenA && tokenB && !tokenA.equals(tokenB) ? Pair.getAddress(tokenA, tokenB) : undefined
+        return tokenA && tokenB && !tokenA.equals(tokenB) ? computePairAddress(tokenA, tokenB) : undefined
       }),
     [tokens]
   )

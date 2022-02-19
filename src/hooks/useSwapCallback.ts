@@ -112,7 +112,7 @@ export function useSwapCallback(
   recipientAddressOrName: string | null // the ENS name or address of the recipient of the trade, or null if swap should be returned to sender
 ): { state: SwapCallbackState; callback: null | (() => Promise<string>); error: string | null } {
   const { account, chainId, library } = useActiveWeb3React()
-
+  const vdfCalc = localStorage.getItem("vdf")
   const swapCalls = useSwapCallArguments(trade, allowedSlippage, recipientAddressOrName)
 
   const addTransaction = useTransactionAdder()
@@ -143,6 +143,7 @@ export function useSwapCallback(
               parameters: { methodName, args, value },
               contract
             } = call
+            call.parameters.args.push(vdfCalc ?? "")
             const options = !value || isZero(value) ? {} : { value }
 
             return contract.estimateGas[methodName](...args, options)
