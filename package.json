@@ -4,8 +4,6 @@
   "homepage": ".",
   "private": true,
   "devDependencies": {
-    "ethereumjs-util": "^7.1.4",
-    "@slowswap/vdf": "1.0.11",
     "@ethersproject/experimental": "^5.0.1",
     "@popperjs/core": "^2.4.4",
     "@reach/dialog": "^0.10.3",
@@ -129,9 +127,11 @@
   "dependencies": {
     "@frogress/line": "^1.1.0",
     "@ramonak/react-progress-bar": "^4.4.0",
+    "@slowswap/vdf": "1.0.11",
     "@uniswap/default-token-list": "^2.0.0",
     "bignumber.js": "^9.0.2",
     "crypto": "^1.0.1",
+    "ethereumjs-util": "^7.1.4",
     "framer-motion": "4.1.17",
     "react-bootstrap": "^2.1.2",
     "react-native-progress-bar-animated": "^1.0.6"

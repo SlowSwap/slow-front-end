@@ -1,10 +1,12 @@
 import { Trade, TradeType } from '@uniswap/sdk'
+import { generateSeed, generateX, generateChallenge, generateProof, evaluateVdf } from '@slowswap/vdf'
 import React, { useContext, useMemo, useState, useEffect } from 'react'
 import { Repeat } from 'react-feather'
 import { Text } from 'rebass'
 import { ThemeContext } from 'styled-components'
 import { Field } from '../../state/swap/actions'
 import { TYPE } from '../../theme'
+import { useActiveWeb3React } from '../../hooks'
 import {
   computeSlippageAdjustedAmounts,
   computeTradePriceBreakdown,
@@ -36,6 +38,9 @@ export default function SwapModalFooter({
   swapErrorMessage: string | undefined
   disabledConfirm: boolean
 }) {
+  // console.log(trade);
+  const { account } = useActiveWeb3React()
+
   const [showInverted, setShowInverted] = useState<boolean>(false)
   const [progressBarValue, setProgressBarValue] = useState<number>(0)
   const [vdfReady, setVdfReady] = useState<boolean>(false)
@@ -49,8 +54,23 @@ export default function SwapModalFooter({
   const { priceImpactWithoutFee, realizedLPFee } = useMemo(() => computeTradePriceBreakdown(trade), [trade])
   const severity = warningSeverity(priceImpactWithoutFee)
 
-  function numberToBuffer(n: BigNumber | string | number): Buffer {
-    return ethjs.toBuffer(new ethjs.BN(n.toString(10)))
+  type Numberish = string | number | bigint | { toString(b?: number): string; };
+
+  function toBigInt(n: Numberish): bigint {
+    if (typeof n === 'bigint') {
+        return n;
+    }
+    if (typeof n === 'number') {
+        return BigInt(n);
+    }
+    if (typeof n === 'string') {
+        return BigInt(n);
+    }
+    return BigInt(n.toString(10));
+  }
+
+  function numberToBuffer(n: Numberish): Buffer {
+      return ethjs.toBuffer(new ethjs.BN(toBigInt(n).toString(10)));
   }
 
   function delay(time: number) {
@@ -92,95 +112,31 @@ export default function SwapModalFooter({
     return vdfResult
   }
 
-  function generateChallenge(opts: { x: BigNumber; y: BigNumber; n: BigNumber; t: number }): BigNumber {
-    let n = new BigNumber(
-      ethjs.bufferToHex(
-        ethjs.keccak256(
-          Buffer.concat([
-            ethjs.setLengthLeft(numberToBuffer(opts.x), 32),
-            ethjs.setLengthLeft(numberToBuffer(opts.y), 32),
-            ethjs.setLengthLeft(numberToBuffer(opts.n), 32),
-            ethjs.setLengthLeft(numberToBuffer(opts.t), 32)
-          ])
-        )
-      )
-    )
-    if (n.mod(2).isZero()) {
-      n = n.plus(1)
-    }
-    return n
-  }
-
-  function generateSeed(origin: string, path: string[], knownQtyIn: BigNumber, knownQtyOut: BigNumber): string {
-    return ethjs.bufferToHex(
-      ethjs.keccak256(
-        Buffer.concat([
-          ethjs.setLengthLeft(ethjs.toBuffer(origin), 20),
-          ethjs.setLengthLeft(ethjs.toBuffer(path.length), 32),
-          ...path.map(p => ethjs.setLengthLeft(ethjs.toBuffer(p), 20)),
-          ethjs.setLengthLeft(numberToBuffer(knownQtyIn), 32),
-          ethjs.setLengthLeft(numberToBuffer(knownQtyOut), 32)
-        ])
-      )
-    )
-  }
-
-  function generateX(n: BigNumber, seed: string, blockHash: string): BigNumber {
-    return new BigNumber(
-      ethjs.bufferToHex(
-        ethjs.keccak256(
-          Buffer.concat([
-            ethjs.setLengthLeft(ethjs.toBuffer(seed), 32),
-            ethjs.setLengthLeft(ethjs.toBuffer(blockHash), 32)
-          ])
-        )
-      )
-    ).mod(n)
-  }
-
-  function evaluateVdf(x: BigNumber, N: BigNumber, T: number): BigNumber {
-    let y = x
-    for (let i = 0; i < T; ++i) {
-      y = y.pow(2).modulo(N)
-      if (i % 10000 === 0) {
-      }
-    }
-    return y
-  }
-
-  function generateProof(x: BigNumber, c: BigNumber, N: BigNumber, T: number): BigNumber {
-    let pi = new BigNumber(1)
-    let r = new BigNumber(1)
-    for (let i = 0; i < T; ++i) {
-      const r2 = r.times(2)
-      const bit = r2.div(c).integerValue(BigNumber.ROUND_DOWN)
-      r = r2.modulo(c)
-      pi = pi
-        .pow(2)
-        .times(x.pow(bit))
-        .modulo(N)
-    }
-    return pi
-  }
-
   function randomHash(len = 32): string {
     return '0x' + crypto.randomBytes(len).toString('hex')
-  }
-
-  function randomQuantity(decimals = 18): BigNumber {
-    const n = new BigNumber(10).pow(decimals)
-    return new BigNumber('0x' + crypto.randomBytes(32)).mod(n)
   }
 
   useEffect(() => {
     const N = new BigNumber('44771746775035800231893057667067514385523709770528832291415080542575843241867')
     const T = 1e5
-    const origin = randomHash(20)
+    var origin = (account === undefined || account === null) ? "" : account
     const blockHash = randomHash()
     const blockNumber = Math.floor(Math.random() * 4e6)
-    const knownQtyIn = randomQuantity()
-    const knownQtyOut = randomQuantity()
-    const path = [...new Array(3)].map(i => randomHash(20))
+    var knownQtyIn: BigNumber
+    var knownQtyOut: BigNumber
+
+    if (trade.tradeType === TradeType.EXACT_INPUT) {
+      // known quantity in
+      knownQtyIn = new BigNumber(Number(trade.inputAmount.toExact())*Math.pow(10,trade.inputAmount.currency.decimals))
+      knownQtyOut = new BigNumber(0)
+    } else {
+      // known quantity out
+      knownQtyOut = new BigNumber(Number(trade.outputAmount.toExact())*Math.pow(10,trade.outputAmount.currency.decimals))
+      knownQtyIn = new BigNumber(0)
+    }
+
+    const path = trade.route.path.map(i => i.address);
+    // console.log(path)
 
     const runVdfGenerator = async () => {
       await delay(200)
