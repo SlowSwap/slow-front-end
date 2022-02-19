@@ -13,7 +13,7 @@ describe('application reducer', () => {
         [ChainId.MAINNET]: 3
       },
       blockHash: {
-        [ChainId.MAINNET]: "0"
+        [ChainId.MAINNET]: '0'
       },
       openModal: null
     })
@@ -57,15 +57,15 @@ describe('application reducer', () => {
 
   describe('updateBlock', () => {
     it('updates block number', () => {
-      store.dispatch(updateBlock({ chainId: ChainId.MAINNET, blockNumber: 4, blockHash: "1" }))
+      store.dispatch(updateBlock({ chainId: ChainId.MAINNET, blockNumber: 4, blockHash: '1' }))
       expect(store.getState().blockNumber[ChainId.MAINNET]).toEqual(4)
     })
     it('no op if late', () => {
-      store.dispatch(updateBlock({ chainId: ChainId.MAINNET, blockNumber: 2, blockHash: "1" }))
+      store.dispatch(updateBlock({ chainId: ChainId.MAINNET, blockNumber: 2, blockHash: '1' }))
       expect(store.getState().blockNumber[ChainId.MAINNET]).toEqual(3)
     })
     it('works with non-set chains', () => {
-      store.dispatch(updateBlock({ chainId: ChainId.ROPSTEN, blockNumber: 2, blockHash: "1" }))
+      store.dispatch(updateBlock({ chainId: ChainId.ROPSTEN, blockNumber: 2, blockHash: '1' }))
       expect(store.getState().blockNumber).toEqual({
         [ChainId.MAINNET]: 3,
         [ChainId.ROPSTEN]: 2

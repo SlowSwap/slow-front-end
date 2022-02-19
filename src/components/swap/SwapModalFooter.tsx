@@ -41,7 +41,7 @@ export default function SwapModalFooter({
   // console.log(trade);
   const { account } = useActiveWeb3React()
   const blockNumber = (useBlockNumber() ?? 1) - 1
-  const blockHash = (useBlockHash() ?? "")
+  const blockHash = useBlockHash() ?? ''
 
   const [showInverted, setShowInverted] = useState<boolean>(false)
   const [progressBarValue, setProgressBarValue] = useState<number>(0)
@@ -118,7 +118,7 @@ export default function SwapModalFooter({
   useEffect(() => {
     const N = new BigNumber('1')
     const T = 20000000
-    const origin = account === undefined || account === null ? "" : account
+    const origin = account === undefined || account === null ? '' : account
     let knownQtyIn: BigNumber
     let knownQtyOut: BigNumber
 
