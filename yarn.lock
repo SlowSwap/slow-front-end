@@ -2148,6 +2148,32 @@
   dependencies:
     any-observable "^0.3.0"
 
+"@slowswap/core@^1.0.4":
+  version "1.0.4"
+  resolved "https://registry.yarnpkg.com/@slowswap/core/-/core-1.0.4.tgz#4e61d46b2c3caa6384acdef863322770f3bed239"
+  integrity sha512-oRwCEm1oeHfy5flrCWmqu0MkLyf3b2Zx+Qhj+2iPx9BfWC+6n/bZGUqKqc1MaoAjQtcu3KjuzsWl/dpLG3TRmw==
+
+"@slowswap/lib@4.0.1-alpha":
+  version "4.0.1-alpha"
+  resolved "https://registry.yarnpkg.com/@slowswap/lib/-/lib-4.0.1-alpha.tgz#c1afd7b1b6bc09fc6c2e9dd37d6c4f1f18341208"
+  integrity sha512-wUAy1cw0/3df36QtFug/7yrlzZluBNKQBRyIPssmcPTXvnNae3YvmwGqY1f4FY44cM5dtNjeP0lBK/0ayzDSZw==
+
+"@slowswap/periphery@^1.1.2":
+  version "1.1.2"
+  resolved "https://registry.yarnpkg.com/@slowswap/periphery/-/periphery-1.1.2.tgz#d26ada9723eba02e2b46aee964aaf04aab716662"
+  integrity sha512-t00mbtr6jEcRnyYlPujgUfW4IVhIbt6++jBVm85AiiidBY+RLb32ewifJI5JyKbcTIUafGV0NKxcIg/dt9ORtw==
+  dependencies:
+    "@slowswap/core" "^1.0.4"
+    "@slowswap/lib" "4.0.1-alpha"
+
+"@slowswap/vdf@1.0.11":
+  version "1.0.11"
+  resolved "https://registry.yarnpkg.com/@slowswap/vdf/-/vdf-1.0.11.tgz#c75eeafead18d3f0655ec82d71b4461bea406f14"
+  integrity sha512-u1q30RGScbxdA876vs1PwCrzNlLgHLUohg3DHP8Atz9h8/nmeDDQquUUbKuZHuKcHQJrqwOsh5Jmw5r3mQbTHQ==
+  dependencies:
+    bignumber.js "^9.0.2"
+    ethereumjs-util "^7.1.4"
+
 "@styled-system/background@^5.1.2":
   version "5.1.2"
   resolved "https://registry.yarnpkg.com/@styled-system/background/-/background-5.1.2.tgz#75c63d06b497ab372b70186c0bf608d62847a2ba"
@@ -2793,11 +2819,6 @@
   resolved "https://registry.yarnpkg.com/@uniswap/governance/-/governance-1.0.2.tgz#7371ab54dea9a5c045275001e2d5325ff2c11a93"
   integrity sha512-L7BzdI/asAINB2F6EvJuQcg5YhykNeEfZxJrn2RPIVvx+9A9u+opDuqnBK4SYnanrsr3UEX1NwWXwDHmyw2TjQ==
 
-"@uniswap/lib@1.1.1":
-  version "1.1.1"
-  resolved "https://registry.yarnpkg.com/@uniswap/lib/-/lib-1.1.1.tgz#0afd29601846c16e5d082866cbb24a9e0758e6bc"
-  integrity sha512-2yK7sLpKIT91TiS5sewHtOa7YuM8IuBXVl4GZv2jZFys4D2sY7K5vZh6MqD25TPA95Od+0YzCVq6cTF2IKrOmg==
-
 "@uniswap/liquidity-staker@^1.0.2":
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/@uniswap/liquidity-staker/-/liquidity-staker-1.0.2.tgz#afed49d51c5f97411432e891a59a24817728dad6"
@@ -2828,23 +2849,10 @@
   resolved "https://registry.yarnpkg.com/@uniswap/token-lists/-/token-lists-1.0.0-beta.19.tgz#5256db144fba721a6233f43b92ffb388cbd58327"
   integrity sha512-19V3KM7DAe40blWW1ApiaSYwqbq0JTKMO3yChGBrXzQBl+BoQZRTNZ4waCyoZ5QM45Q0Mxd6bCn6jXcH9G1kjg==
 
-"@uniswap/v2-core@1.0.0":
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/@uniswap/v2-core/-/v2-core-1.0.0.tgz#e0fab91a7d53e8cafb5326ae4ca18351116b0844"
-  integrity sha512-BJiXrBGnN8mti7saW49MXwxDBRFiWemGetE58q8zgfnPPzQKq55ADltEILqOt6VFZ22kVeVKbF8gVd8aY3l7pA==
-
 "@uniswap/v2-core@^1.0.0":
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/@uniswap/v2-core/-/v2-core-1.0.1.tgz#af8f508bf183204779938969e2e54043e147d425"
   integrity sha512-MtybtkUPSyysqLY2U210NBDeCHX+ltHt3oADGdjqoThZaFRDKwM6k1Nb3F0A3hk5hwuQvytFWhrWHOEq6nVJ8Q==
-
-"@uniswap/v2-periphery@^1.1.0-beta.0":
-  version "1.1.0-beta.0"
-  resolved "https://registry.yarnpkg.com/@uniswap/v2-periphery/-/v2-periphery-1.1.0-beta.0.tgz#20a4ccfca22f1a45402303aedb5717b6918ebe6d"
-  integrity sha512-6dkwAMKza8nzqYiXEr2D86dgW3TTavUvCR0w2Tu33bAbM8Ah43LKAzH7oKKPRT5VJQaMi1jtkGs1E8JPor1n5g==
-  dependencies:
-    "@uniswap/lib" "1.1.1"
-    "@uniswap/v2-core" "1.0.0"
 
 "@walletconnect/client@^1.1.1-alpha.0":
   version "1.1.1-alpha.0"
