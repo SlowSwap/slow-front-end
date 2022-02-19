@@ -13,7 +13,7 @@ import {
   formatExecutionPrice,
   warningSeverity
 } from '../../utils/prices'
-import { getRouterContract } from '../../utils';
+import { getRouterContract } from '../../utils'
 import { ButtonError } from '../Button'
 import { AutoColumn } from '../Column'
 import QuestionHelper from '../QuestionHelper'
@@ -27,9 +27,9 @@ import VdfWorker from 'worker-loader!../../workers/vdf.ts'
 import ProgressBar from '@ramonak/react-progress-bar'
 
 interface VdfWorkerOutput {
-    id: string;
-    progress: number;
-    proof?: string;
+  id: string
+  progress: number
+  proof?: string
 }
 
 export default function SwapModalFooter({
@@ -69,7 +69,7 @@ export default function SwapModalFooter({
       // known quantity in
       knownQtyIn = new BigNumber(
         Number(trade.inputAmount.toExact()) * Math.pow(10, trade.inputAmount.currency.decimals)
-    ).toString(10)
+      ).toString(10)
       knownQtyOut = '0'
     } else {
       // known quantity out
@@ -79,36 +79,35 @@ export default function SwapModalFooter({
       knownQtyIn = '0'
     }
 
-    const path = trade.route.path.map(t => t.address);
-    const router = getRouterContract(chainId!, library!);
-
-    (async () => {
-          const [N, T, currentBlockNumber] = await Promise.all([router.N(), router.T(), library!.getBlockNumber()]);
-          const blockNumber = currentBlockNumber - 1;
-          const { hash: blockHash } = await library!!.getBlock(blockNumber);
-          const worker = new VdfWorker();
-          worker.addEventListener('message', ev => {
-              const output = ev.data as VdfWorkerOutput;
-              setProgressBarValue(Math.round(output.progress * 100));
-              if (output.proof) {
-                  worker.terminate();
-                  setVdf(output.proof);
-                  localStorage.setItem('vdf', output.proof);
-                  setVdfReady(true);
-              }
-          });
-          worker.postMessage({
-              id: crypto.randomBytes(32).toString('hex'),
-              n: N.toString(),
-              t: T.toNumber(),
-              blockHash,
-              blockNumber,
-              knownQtyIn,
-              knownQtyOut,
-              origin,
-              path,
-          });
-      })();
+    const path = trade.route.path.map(t => t.address)
+    const router = getRouterContract(chainId!, library!)
+    ;(async () => {
+      const [N, T, currentBlockNumber] = await Promise.all([router.N(), router.T(), library!.getBlockNumber()])
+      const blockNumber = currentBlockNumber - 1
+      const { hash: blockHash } = await library!!.getBlock(blockNumber)
+      const worker = new VdfWorker()
+      worker.addEventListener('message', ev => {
+        const output = ev.data as VdfWorkerOutput
+        setProgressBarValue(Math.round(output.progress * 100))
+        if (output.proof) {
+          worker.terminate()
+          setVdf(output.proof)
+          localStorage.setItem('vdf', output.proof)
+          setVdfReady(true)
+        }
+      })
+      worker.postMessage({
+        id: crypto.randomBytes(32).toString('hex'),
+        n: N.toString(),
+        t: T.toNumber(),
+        blockHash,
+        blockNumber,
+        knownQtyIn,
+        knownQtyOut,
+        origin,
+        path
+      })
+    })()
     // eslint-disable-next-line
   }, [])
 

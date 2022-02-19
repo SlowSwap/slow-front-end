@@ -144,7 +144,7 @@ export function useSwapCallback(
               contract
             } = call
             if (vdfCalc) {
-                call.parameters.args.push(vdfCalc)
+              call.parameters.args.push(vdfCalc)
             }
             const options = !value || isZero(value) ? {} : { value }
 
