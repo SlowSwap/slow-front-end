@@ -29,7 +29,9 @@ export enum ApplicationModal {
   VOTE
 }
 
-export const updateBlock = createAction<{ chainId: number; blockNumber: number, blockHash: string }>('application/updateBlock')
+export const updateBlock = createAction<{ chainId: number; blockNumber: number; blockHash: string }>(
+  'application/updateBlock'
+)
 export const setOpenModal = createAction<ApplicationModal | null>('application/setOpenModal')
 export const addPopup = createAction<{ key?: string; removeAfterMs?: number | null; content: PopupContent }>(
   'application/addPopup'

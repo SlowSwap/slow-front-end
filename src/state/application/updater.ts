@@ -11,19 +11,25 @@ export default function Updater(): null {
 
   const windowVisible = useIsWindowVisible()
 
-  const [state, setState] = useState<{ chainId: number | undefined; blockNumber: number | null; blockHash: string | null }>({
+  const [state, setState] = useState<{
+    chainId: number | undefined
+    blockNumber: number | null
+    blockHash: string | null
+  }>({
     chainId,
     blockNumber: null,
     blockHash: null
   })
 
-  const blockCallback = useCallback(async (blockNumber: number, blockHash: string) => {
+  const blockCallback = useCallback(
+    async (blockNumber: number, blockHash: string) => {
       if (blockHash === undefined) {
         blockHash = (await library!.getBlock(blockNumber - 1)).hash
       }
       setState(state => {
         if (chainId === state.chainId) {
-          if (typeof state.blockNumber !== 'number' || typeof state.blockHash !== 'string') return { chainId, blockNumber, blockHash }
+          if (typeof state.blockNumber !== 'number' || typeof state.blockHash !== 'string')
+            return { chainId, blockNumber, blockHash }
           return { chainId, blockNumber: Math.max(blockNumber, state.blockNumber), blockHash }
         }
         return state
@@ -39,14 +45,13 @@ export default function Updater(): null {
       const blockHash = (await library!.getBlock(blockNumber - 1)).hash
 
       blockCallback(blockNumber, blockHash)
-     }
+    }
 
     if (!library || !chainId || !windowVisible) return undefined
 
     setState({ chainId, blockNumber: null, blockHash: null })
 
-    getBlockInfo()
-      .catch(error => console.error(`Failed to get block number for chainId: ${chainId}`, error))
+    getBlockInfo().catch(error => console.error(`Failed to get block number for chainId: ${chainId}`, error))
 
     library.on('block', blockCallback)
     return () => {
@@ -58,7 +63,13 @@ export default function Updater(): null {
 
   useEffect(() => {
     if (!debouncedState.chainId || !debouncedState.blockNumber || !windowVisible) return
-    dispatch(updateBlock({ chainId: debouncedState.chainId, blockNumber: debouncedState.blockNumber, blockHash: debouncedState.blockHash ?? "" }))
+    dispatch(
+      updateBlock({
+        chainId: debouncedState.chainId,
+        blockNumber: debouncedState.blockNumber,
+        blockHash: debouncedState.blockHash ?? ''
+      })
+    )
   }, [windowVisible, dispatch, debouncedState.blockNumber, debouncedState.chainId])
 
   return null
