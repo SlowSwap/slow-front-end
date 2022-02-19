@@ -18,7 +18,6 @@ const ctx: Worker = self as any
 
 ctx.addEventListener('message', ev => {
   const data = ev.data as GenerateVdfInputs
-  console.log(data)
   const proof = generateVdf({
     ...data,
     onProgress: progress => {
