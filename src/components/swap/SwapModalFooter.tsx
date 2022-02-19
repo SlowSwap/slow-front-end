@@ -7,6 +7,7 @@ import { ThemeContext } from 'styled-components'
 import { Field } from '../../state/swap/actions'
 import { TYPE } from '../../theme'
 import { useActiveWeb3React } from '../../hooks'
+import { useBlockNumber, useBlockHash } from '../../state/application/hooks'
 import {
   computeSlippageAdjustedAmounts,
   computeTradePriceBreakdown,
@@ -59,9 +60,13 @@ export default function SwapModalFooter({
   ])
   const { priceImpactWithoutFee, realizedLPFee } = useMemo(() => computeTradePriceBreakdown(trade), [trade])
   const severity = warningSeverity(priceImpactWithoutFee)
+  const blockNumber = (useBlockNumber() ?? 1)
+  const blockHash = useBlockHash() ?? ''
 
   useEffect(() => {
     const origin = account === undefined || account === null ? '' : account
+    let N;
+    let T;
     let knownQtyIn: string
     let knownQtyOut: string
 
@@ -82,9 +87,9 @@ export default function SwapModalFooter({
     const path = trade.route.path.map(t => t.address)
     const router = getRouterContract(chainId!, library!)
     ;(async () => {
-      const [N, T, currentBlockNumber] = await Promise.all([router.N(), router.T(), library!.getBlockNumber()])
-      const blockNumber = currentBlockNumber - 1
-      const { hash: blockHash } = await library!!.getBlock(blockNumber)
+      if (!N || !T) {
+          [N, T] = await Promise.all([router.N(), router.T()])
+      }
       const worker = new VdfWorker()
       worker.addEventListener('message', ev => {
         const output = ev.data as VdfWorkerOutput
