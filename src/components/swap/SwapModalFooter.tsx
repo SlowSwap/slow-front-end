@@ -108,7 +108,7 @@ export default function SwapModalFooter({
       ])
     )
     setVdf(vdfResult)
-    localStorage.setItem("vdf", vdfResult)
+    localStorage.setItem('vdf', vdfResult)
     setVdfReady(true)
     setProgressBarValue(100)
     await delay(1000)

@@ -11,16 +11,13 @@ import { wrappedCurrency } from '../utils/wrappedCurrency'
 
 const PAIR_INTERFACE = new Interface(IUniswapV2PairABI)
 
-const computePairAddress = (
-  tokenA: Token,
-  tokenB: Token
-): string => {
+const computePairAddress = (tokenA: Token, tokenB: Token): string => {
   const factoryAddress = process.env.REACT_APP_FACTORY_ADDRESS
   const [token0, token1] = tokenA.sortsBefore(tokenB) ? [tokenA, tokenB] : [tokenB, tokenA] // does safety checks
   return getCreate2Address(
-    factoryAddress ?? "",
+    factoryAddress ?? '',
     keccak256(['bytes'], [pack(['address', 'address'], [token0.address, token1.address])]),
-    process.env.REACT_APP_INIT_CODE_HASH ?? ""
+    process.env.REACT_APP_INIT_CODE_HASH ?? ''
   )
 }
 
@@ -42,7 +39,7 @@ export function usePairs(currencies: [Currency | undefined, Currency | undefined
       ]),
     [chainId, currencies]
   )
-      
+
   const pairAddresses = useMemo(
     () =>
       tokens.map(([tokenA, tokenB]) => {
