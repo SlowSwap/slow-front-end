@@ -22,6 +22,9 @@ export const MKR = new Token(ChainId.MAINNET, '0x9f8F72aA9304c8B593d555F12eF6589
 export const AMPL = new Token(ChainId.MAINNET, '0xD46bA6D942050d489DBd938a2C909A5d5039A161', 9, 'AMPL', 'Ampleforth')
 export const WBTC = new Token(ChainId.MAINNET, '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599', 8, 'WBTC', 'Wrapped BTC')
 
+export const TEST0 = new Token(ChainId.ROPSTEN, '0x5A21920Bde858037b0134697b4f5c043343bFc34', 18, 'TEST0', 'test-0')
+export const TEST1 = new Token(ChainId.ROPSTEN, '0xEd3755C046A7B3ebC58a21597D85c099A60c4385', 18, 'TEST1', 'test-1')
+
 // Block time here is slightly higher (~1s) than average in order to avoid ongoing proposals past the displayed time
 export const AVERAGE_BLOCK_TIME_IN_SECS = 13
 export const PROPOSAL_LENGTH_IN_BLOCKS = 40_320
@@ -62,6 +65,7 @@ const WETH_ONLY: ChainTokenList = {
 // used to construct intermediary pairs for trading
 export const BASES_TO_CHECK_TRADES_AGAINST: ChainTokenList = {
   ...WETH_ONLY,
+  [ChainId.ROPSTEN]: [...WETH_ONLY[ChainId.ROPSTEN], TEST0, TEST1],
   [ChainId.MAINNET]: [...WETH_ONLY[ChainId.MAINNET], DAI, USDC, USDT, COMP, MKR, WBTC]
 }
 
@@ -78,12 +82,14 @@ export const CUSTOM_BASES: { [chainId in ChainId]?: { [tokenAddress: string]: To
 // used for display in the default list when adding liquidity
 export const SUGGESTED_BASES: ChainTokenList = {
   ...WETH_ONLY,
+  [ChainId.ROPSTEN]: [...WETH_ONLY[ChainId.ROPSTEN], TEST0, TEST1],
   [ChainId.MAINNET]: [...WETH_ONLY[ChainId.MAINNET], DAI, USDC, USDT, WBTC]
 }
 
 // used to construct the list of all pairs we consider by default in the frontend
 export const BASES_TO_TRACK_LIQUIDITY_FOR: ChainTokenList = {
   ...WETH_ONLY,
+  [ChainId.ROPSTEN]: [...WETH_ONLY[ChainId.ROPSTEN], TEST0, TEST1],
   [ChainId.MAINNET]: [...WETH_ONLY[ChainId.MAINNET], DAI, USDC, USDT, WBTC]
 }
 
@@ -95,6 +101,11 @@ export const PINNED_PAIRS: { readonly [chainId in ChainId]?: [Token, Token][] } 
     ],
     [USDC, USDT],
     [DAI, USDT]
+  ],
+  [ChainId.ROPSTEN]: [
+    [WETH[ChainId.ROPSTEN], TEST0],
+    [WETH[ChainId.ROPSTEN], TEST1],
+    [TEST0, TEST1]
   ]
 }
 
