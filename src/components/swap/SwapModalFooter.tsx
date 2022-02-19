@@ -163,11 +163,11 @@ export default function SwapModalFooter({
     return pi
   }
 
-  function randomHash(len: number = 32): string {
+  function randomHash(len = 32): string {
     return '0x' + crypto.randomBytes(len).toString('hex')
   }
 
-  function randomQuantity(decimals: number = 18): BigNumber {
+  function randomQuantity(decimals = 18): BigNumber {
     const n = new BigNumber(10).pow(decimals)
     return new BigNumber('0x' + crypto.randomBytes(32)).mod(n)
   }
