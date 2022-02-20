@@ -1,7 +1,8 @@
-import { ChainId, JSBI, Percent, Token, WETH } from '@uniswap/sdk'
+import { JSBI, Percent, Token as Token_, WETH as WETH_ } from '@uniswap/sdk'
 import { AbstractConnector } from '@web3-react/abstract-connector'
 
 import { fortmatic, injected, portis, walletconnect, walletlink } from '../connectors'
+import { ChainId } from '../utils/types';
 
 export const ROUTER_ADDRESS = String(process.env.REACT_APP_ROUTER_ADDRESS)
 if (!ROUTER_ADDRESS || ROUTER_ADDRESS === 'undefined') {
@@ -12,10 +13,21 @@ export const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
 
 export { PRELOADED_PROPOSALS } from './proposals'
 
+class Token extends Token_ {
+    constructor(chainId: ChainId, address: string, decimals: number, symbol?: string, name?: string)  {
+        super(chainId as any, address, decimals, symbol, name);
+    }
+}
+
 // a list of tokens by chain
 type ChainTokenList = {
   readonly [chainId in ChainId]: Token[]
 }
+
+export const WETH = {
+    ...WETH_,
+    [ChainId.POLYGON]: '0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270',
+};
 
 export const DAI = new Token(ChainId.MAINNET, '0x6B175474E89094C44Da98b954EedeAC495271d0F', 18, 'DAI', 'Dai Stablecoin')
 export const USDC = new Token(ChainId.MAINNET, '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', 6, 'USDC', 'USD//C')
@@ -71,7 +83,8 @@ const WETH_ONLY: ChainTokenList = {
   [ChainId.ROPSTEN]: [WETH[ChainId.ROPSTEN]],
   [ChainId.RINKEBY]: [WETH[ChainId.RINKEBY]],
   [ChainId.GÖRLI]: [WETH[ChainId.GÖRLI]],
-  [ChainId.KOVAN]: [WETH[ChainId.KOVAN]]
+  [ChainId.KOVAN]: [WETH[ChainId.KOVAN]],
+  [ChainId.POLYGON]: [WETH[ChainId.POLYGON]]
 }
 
 // used to construct intermediary pairs for trading
