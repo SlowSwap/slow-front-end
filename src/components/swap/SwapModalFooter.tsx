@@ -7,7 +7,7 @@ import { ThemeContext } from 'styled-components'
 import { Field } from '../../state/swap/actions'
 import { TYPE } from '../../theme'
 import { useActiveWeb3React } from '../../hooks'
-// import { useBlockNumber, useBlockHash } from '../../state/application/hooks'
+import { useBlockNumber } from '../../state/application/hooks'
 import {
   computeSlippageAdjustedAmounts,
   computeTradePriceBreakdown,
@@ -60,7 +60,7 @@ export default function SwapModalFooter({
   ])
   const { priceImpactWithoutFee, realizedLPFee } = useMemo(() => computeTradePriceBreakdown(trade), [trade])
   const severity = warningSeverity(priceImpactWithoutFee)
-  // const blockNumber = (useBlockNumber() ?? 1)
+  const blockNumber = (useBlockNumber() ?? 1)
   // const blockHash = useBlockHash() ?? ''
 
   useEffect(() => {
@@ -90,7 +90,7 @@ export default function SwapModalFooter({
       if (!N || !T) {
         ;[N, T] = await Promise.all([router.N(), router.T()])
       }
-      const blockNumber = (await library!.getBlockNumber()) - 1;
+      // const blockNumber = (await library!.getBlockNumber()) - 1;
       const blockHash = (await library!.getBlock(blockNumber)).hash;
       const worker = new VdfWorker()
       worker.addEventListener('message', ev => {
