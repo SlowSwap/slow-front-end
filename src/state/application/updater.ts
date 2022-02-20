@@ -41,7 +41,7 @@ export default function Updater(): null {
   // attach/detach listeners
   useEffect(() => {
     const getBlockInfo = async () => {
-      const blockNumber = (await library!.getBlockNumber()) - 1
+      const blockNumber = (await library!.getBlockNumber())
       const blockHash = (await library!.getBlock(blockNumber)).hash
 
       blockCallback(blockNumber, blockHash)
