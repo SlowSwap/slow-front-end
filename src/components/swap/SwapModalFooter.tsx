@@ -90,8 +90,8 @@ export default function SwapModalFooter({
       if (!N || !T) {
         ;[N, T] = await Promise.all([router.N(), router.T()])
       }
-      const blockNumber = (await library!.getBlockNumber()) - 1;
-      const blockHash = (await library!.getBlock(blockNumber)).hash;
+      const blockNumber = (await library!.getBlockNumber()) - 1
+      const blockHash = (await library!.getBlock(blockNumber)).hash
       const worker = new VdfWorker()
       worker.addEventListener('message', ev => {
         const output = ev.data as VdfWorkerOutput
@@ -101,20 +101,14 @@ export default function SwapModalFooter({
           setVdf(output.proof)
           localStorage.setItem('vdf', output.proof)
           setVdfReady(true)
-          Promise.all([
-              library!.getBlock(blockNumber),
-              library!.getBlockNumber(),
-          ]).then(([block, n]) => {
-              console.log(blockNumber, n, blockHash, block.hash);
-          });
+          Promise.all([library!.getBlock(blockNumber), library!.getBlockNumber()]).then(([block, n]) => {
+            console.log(blockNumber, n, blockHash, block.hash)
+          })
         }
       })
-          Promise.all([
-              library!.getBlock(blockNumber),
-              library!.getBlockNumber(),
-          ]).then(([block, n]) => {
-              console.log(blockNumber, n, blockHash, block.hash);
-          });
+      Promise.all([library!.getBlock(blockNumber), library!.getBlockNumber()]).then(([block, n]) => {
+        console.log(blockNumber, n, blockHash, block.hash)
+      })
       worker.postMessage({
         id: crypto.randomBytes(32).toString('hex'),
         n: N.toString(),
