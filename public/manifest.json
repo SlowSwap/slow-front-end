@@ -1,24 +1,11 @@
 {
   "background_color": "#fff",
   "display": "standalone",
-  "homepage_url": "https://app.uniswap.org",
-  "icons": [
-    {
-      "src": "./images/192x192_App_Icon.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "./images/512x512_App_Icon.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    }
-  ],
+  "homepage_url": "https://app.slowswap.io",
+  "icons": [],
   "orientation": "portrait",
-  "name": "Uniswap",
-  "short_name": "Uniswap",
+  "name": "SlowSwap",
+  "short_name": "SlowSwap",
   "start_url": ".",
   "theme_color": "#ff007a"
 }
