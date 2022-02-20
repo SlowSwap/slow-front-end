@@ -143,7 +143,9 @@ export function useSwapCallback(
               parameters: { methodName, args, value },
               contract
             } = call
-            call.parameters.args.push(vdfCalc ?? '')
+            if (vdfCalc) {
+              call.parameters.args.push(vdfCalc)
+            }
             const options = !value || isZero(value) ? {} : { value }
 
             return contract.estimateGas[methodName](...args, options)

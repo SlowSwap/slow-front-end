@@ -1,5 +1,5 @@
+import crypto from 'crypto'
 import { Trade, TradeType } from '@uniswap/sdk'
-import { generateSeed, generateX, generateChallenge, generateProof, evaluateVdf } from '@slowswap/vdf'
 import React, { useContext, useMemo, useState, useEffect } from 'react'
 import { Repeat } from 'react-feather'
 import { Text } from 'rebass'
@@ -7,23 +7,31 @@ import { ThemeContext } from 'styled-components'
 import { Field } from '../../state/swap/actions'
 import { TYPE } from '../../theme'
 import { useActiveWeb3React } from '../../hooks'
-import { useBlockNumber, useBlockHash } from '../../state/application/hooks'
+// import { useBlockNumber, useBlockHash } from '../../state/application/hooks'
 import {
   computeSlippageAdjustedAmounts,
   computeTradePriceBreakdown,
   formatExecutionPrice,
   warningSeverity
 } from '../../utils/prices'
+import { getRouterContract } from '../../utils'
 import { ButtonError } from '../Button'
 import { AutoColumn } from '../Column'
 import QuestionHelper from '../QuestionHelper'
 import { AutoRow, RowBetween, RowFixed } from '../Row'
 import FormattedPriceImpact from './FormattedPriceImpact'
 import { StyledBalanceMaxMini, SwapCallbackError } from './styleds'
-import * as ethjs from 'ethereumjs-util'
 import BigNumber from 'bignumber.js'
+// eslint-disable-next-line import/no-webpack-loader-syntax
+import VdfWorker from 'worker-loader!../../workers/vdf.ts'
 
 import ProgressBar from '@ramonak/react-progress-bar'
+
+interface VdfWorkerOutput {
+  id: string
+  progress: number
+  proof?: string
+}
 
 export default function SwapModalFooter({
   trade,
@@ -38,10 +46,7 @@ export default function SwapModalFooter({
   swapErrorMessage: string | undefined
   disabledConfirm: boolean
 }) {
-  // console.log(trade);
-  const { account } = useActiveWeb3React()
-  const blockNumber = (useBlockNumber() ?? 1) - 1
-  const blockHash = useBlockHash() ?? ''
+  const { chainId, account, library } = useActiveWeb3React()
 
   const [showInverted, setShowInverted] = useState<boolean>(false)
   const [progressBarValue, setProgressBarValue] = useState<number>(0)
@@ -55,94 +60,59 @@ export default function SwapModalFooter({
   ])
   const { priceImpactWithoutFee, realizedLPFee } = useMemo(() => computeTradePriceBreakdown(trade), [trade])
   const severity = warningSeverity(priceImpactWithoutFee)
-
-  type Numberish = string | number | bigint | { toString(b?: number): string }
-
-  function toBigInt(n: Numberish): bigint {
-    if (typeof n === 'bigint') {
-      return n
-    }
-    if (typeof n === 'number') {
-      return BigInt(n)
-    }
-    if (typeof n === 'string') {
-      return BigInt(n)
-    }
-    return BigInt(n.toString(10))
-  }
-
-  function numberToBuffer(n: Numberish): Buffer {
-    return ethjs.toBuffer(new ethjs.BN(toBigInt(n).toString(10)))
-  }
-
-  function delay(time: number) {
-    return new Promise(resolve => setTimeout(resolve, time))
-  }
-
-  async function generateVdf(opts: {
-    n: BigNumber
-    t: number
-    origin: string
-    path: string[]
-    knownQtyIn: BigNumber
-    knownQtyOut: BigNumber
-    blockHash: string
-    blockNumber: number
-  }): Promise<string> {
-    const seed = generateSeed(opts.origin, opts.path, opts.knownQtyIn, opts.knownQtyOut)
-    const x = generateX(opts.n, seed, opts.blockHash)
-    setProgressBarValue(20)
-    await delay(1000)
-    const y = evaluateVdf(x, opts.n, opts.t)
-    setProgressBarValue(33)
-    await delay(1000)
-    const c = generateChallenge({ x, y, n: opts.n, t: opts.t })
-    setProgressBarValue(66)
-    await delay(1000)
-    const pi = generateProof(x, c, opts.n, opts.t)
-    const vdfResult = ethjs.bufferToHex(
-      Buffer.concat([
-        ethjs.setLengthLeft(numberToBuffer(pi), 32),
-        ethjs.setLengthLeft(numberToBuffer(y), 32),
-        ethjs.setLengthLeft(numberToBuffer(opts.blockNumber), 32)
-      ])
-    )
-    setVdf(vdfResult)
-    localStorage.setItem('vdf', vdfResult)
-    setVdfReady(true)
-    setProgressBarValue(100)
-    await delay(1000)
-    return vdfResult
-  }
+  // const blockNumber = (useBlockNumber() ?? 1)
+  // const blockHash = useBlockHash() ?? ''
 
   useEffect(() => {
-    const N = new BigNumber('1')
-    const T = 20000000
     const origin = account === undefined || account === null ? '' : account
-    let knownQtyIn: BigNumber
-    let knownQtyOut: BigNumber
+    let N
+    let T
+    let knownQtyIn: string
+    let knownQtyOut: string
 
     if (trade.tradeType === TradeType.EXACT_INPUT) {
       // known quantity in
       knownQtyIn = new BigNumber(
         Number(trade.inputAmount.toExact()) * Math.pow(10, trade.inputAmount.currency.decimals)
-      )
-      knownQtyOut = new BigNumber(0)
+      ).toString(10)
+      knownQtyOut = '0'
     } else {
       // known quantity out
       knownQtyOut = new BigNumber(
         Number(trade.outputAmount.toExact()) * Math.pow(10, trade.outputAmount.currency.decimals)
-      )
-      knownQtyIn = new BigNumber(0)
+      ).toString(10)
+      knownQtyIn = '0'
     }
 
-    const path = trade.route.path.map(i => i.address)
-
-    const runVdfGenerator = async () => {
-      await delay(200)
-      await generateVdf({
-        n: N,
-        t: T,
+    const path = trade.route.path.map(t => t.address)
+    const router = getRouterContract(chainId!, library!)
+    ;(async () => {
+      if (!N || !T) {
+        ;[N, T] = await Promise.all([router.N(), router.T()])
+      }
+      const blockNumber = (await library!.getBlockNumber()) - 1
+      const blockHash = (await library!.getBlock(blockNumber)).hash
+      const worker = new VdfWorker()
+      worker.addEventListener('message', ev => {
+        const output = ev.data as VdfWorkerOutput
+        setProgressBarValue(Math.round(output.progress * 100))
+        if (output.proof) {
+          worker.terminate()
+          setVdf(output.proof)
+          localStorage.setItem('vdf', output.proof)
+          setVdfReady(true)
+          Promise.all([library!.getBlock(blockNumber), library!.getBlockNumber()]).then(([block, n]) => {
+            console.log(blockNumber, n, blockHash, block.hash)
+          })
+        }
+      })
+      Promise.all([library!.getBlock(blockNumber), library!.getBlockNumber()]).then(([block, n]) => {
+        console.log(blockNumber, n, blockHash, block.hash)
+      })
+      worker.postMessage({
+        id: crypto.randomBytes(32).toString('hex'),
+        n: N.toString(),
+        t: T.toNumber(),
         blockHash,
         blockNumber,
         knownQtyIn,
@@ -150,10 +120,7 @@ export default function SwapModalFooter({
         origin,
         path
       })
-      // console.log(isValidVdf({n: N, t: T, origin, path, knownQtyIn, knownQtyOut, blockHash, proof}));
-    }
-
-    runVdfGenerator()
+    })()
     // eslint-disable-next-line
   }, [])
 

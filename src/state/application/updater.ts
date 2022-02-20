@@ -24,7 +24,7 @@ export default function Updater(): null {
   const blockCallback = useCallback(
     async (blockNumber: number, blockHash: string) => {
       if (blockHash === undefined) {
-        blockHash = (await library!.getBlock(blockNumber - 1)).hash
+        blockHash = (await library!.getBlock(blockNumber)).hash
       }
       setState(state => {
         if (chainId === state.chainId) {
@@ -41,8 +41,8 @@ export default function Updater(): null {
   // attach/detach listeners
   useEffect(() => {
     const getBlockInfo = async () => {
-      const blockNumber = await library!.getBlockNumber()
-      const blockHash = (await library!.getBlock(blockNumber - 1)).hash
+      const blockNumber = (await library!.getBlockNumber()) - 1
+      const blockHash = (await library!.getBlock(blockNumber)).hash
 
       blockCallback(blockNumber, blockHash)
     }
