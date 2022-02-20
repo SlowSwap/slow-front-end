@@ -1,4 +1,3 @@
-import { ChainId } from '@uniswap/sdk'
 //import { ChainId, TokenAmount } from '@uniswap/sdk'
 import React, { useState } from 'react'
 import { Text } from 'rebass'
@@ -32,6 +31,7 @@ import { useUserHasSubmittedClaim } from '../../state/transactions/hooks'
 import { Dots } from '../swap/styleds'
 import Modal from '../Modal'
 import UniBalanceContent from './UniBalanceContent'
+import { ChainId } from '../../utils/types'
 // import usePrevious from '../../hooks/usePrevious'
 
 const HeaderFrame = styled.div`
@@ -294,7 +294,8 @@ const NETWORK_LABELS: { [chainId in ChainId]?: string } = {
   [ChainId.RINKEBY]: 'Rinkeby',
   [ChainId.ROPSTEN]: 'Ropsten',
   [ChainId.GÖRLI]: 'Görli',
-  [ChainId.KOVAN]: 'Kovan'
+  [ChainId.KOVAN]: 'Kovan',
+  [ChainId.POLYGON]: 'Polygon'
 }
 
 export default function Header() {
