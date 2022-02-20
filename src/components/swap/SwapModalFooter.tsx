@@ -86,7 +86,7 @@ export default function SwapModalFooter({
 
     const path = trade.route.path.map(t => t.address)
     const router = getRouterContract(chainId!, library!)
-    setVdfReady(false);
+    setVdfReady(false)
     ;(async () => {
       const id = crypto.randomBytes(32).toString('hex')
       if (!N || !T) {
@@ -98,7 +98,7 @@ export default function SwapModalFooter({
       worker.addEventListener('message', ev => {
         const output = ev.data as VdfWorkerOutput
         if (output.id !== id) {
-            return;
+          return
         }
         setProgressBarValue(Math.round(output.progress * 100))
         if (output.proof) {

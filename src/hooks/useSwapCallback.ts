@@ -201,7 +201,7 @@ export function useSwapCallback(
           gasEstimate
         } = successfulEstimation
 
-        const gasPrice = (await library!.getGasPrice()).mul(2);
+        const gasPrice = (await library!.getGasPrice()).mul(2)
         return contract[methodName](...args, {
           gasLimit: calculateGasMargin(gasEstimate),
           gasPrice,
