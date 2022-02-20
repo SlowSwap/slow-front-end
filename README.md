@@ -6,6 +6,7 @@ SlowSwap is an AMM with a VDF that prevents MEV front-running and sandwiching. U
 
 This project was built during EthDenver 2022. You can find a live product [here](https://app.slowswap.io/).
 
+
 ## Development
 
 ### Install Dependencies
