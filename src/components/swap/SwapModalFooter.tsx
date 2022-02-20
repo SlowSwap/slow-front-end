@@ -86,7 +86,9 @@ export default function SwapModalFooter({
 
     const path = trade.route.path.map(t => t.address)
     const router = getRouterContract(chainId!, library!)
+    setVdfReady(false)
     ;(async () => {
+      const id = crypto.randomBytes(32).toString('hex')
       if (!N || !T) {
         ;[N, T] = await Promise.all([router.N(), router.T()])
       }
@@ -95,22 +97,19 @@ export default function SwapModalFooter({
       const worker = new VdfWorker()
       worker.addEventListener('message', ev => {
         const output = ev.data as VdfWorkerOutput
+        if (output.id !== id) {
+          return
+        }
         setProgressBarValue(Math.round(output.progress * 100))
         if (output.proof) {
           worker.terminate()
           setVdf(output.proof)
-          localStorage.setItem('vdf', output.proof)
           setVdfReady(true)
-          Promise.all([library!.getBlock(blockNumber), library!.getBlockNumber()]).then(([block, n]) => {
-            console.log(blockNumber, n, blockHash, block.hash)
-          })
+          localStorage.setItem('vdf', output.proof)
         }
       })
-      Promise.all([library!.getBlock(blockNumber), library!.getBlockNumber()]).then(([block, n]) => {
-        console.log(blockNumber, n, blockHash, block.hash)
-      })
       worker.postMessage({
-        id: crypto.randomBytes(32).toString('hex'),
+        id,
         n: N.toString(),
         t: T.toNumber(),
         blockHash,

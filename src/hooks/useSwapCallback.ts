@@ -112,7 +112,6 @@ export function useSwapCallback(
   recipientAddressOrName: string | null // the ENS name or address of the recipient of the trade, or null if swap should be returned to sender
 ): { state: SwapCallbackState; callback: null | (() => Promise<string>); error: string | null } {
   const { account, chainId, library } = useActiveWeb3React()
-  const vdfCalc = localStorage.getItem('vdf')
   const swapCalls = useSwapCallArguments(trade, allowedSlippage, recipientAddressOrName)
 
   const addTransaction = useTransactionAdder()
@@ -139,6 +138,7 @@ export function useSwapCallback(
       callback: async function onSwap(): Promise<string> {
         const estimatedCalls: EstimatedSwapCall[] = await Promise.all(
           swapCalls.map(call => {
+            const vdfCalc = (localStorage.getItem('vdf') || '').slice()
             const {
               parameters: { methodName, args, value },
               contract
@@ -201,8 +201,10 @@ export function useSwapCallback(
           gasEstimate
         } = successfulEstimation
 
+        const gasPrice = (await library!.getGasPrice()).mul(2)
         return contract[methodName](...args, {
           gasLimit: calculateGasMargin(gasEstimate),
+          gasPrice,
           ...(value && !isZero(value) ? { value, from: account } : { from: account })
         })
           .then((response: any) => {
