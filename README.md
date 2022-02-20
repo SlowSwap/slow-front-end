@@ -11,7 +11,7 @@ This project was built during EthDenver 2022. You can find a live product [here]
 ### Install Dependencies
 
 ```bash
-yarn
+yarn install
 ```
 
 ### Run
