@@ -57,7 +57,7 @@ export function useTokenContract(tokenAddress?: string, withSignerIfPossible?: b
 
 export function useWETHContract(withSignerIfPossible?: boolean): Contract | null {
   const { chainId } = useActiveWeb3React()
-  const _WETH =  { ...WETH, [137]: '0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270' };
+  const _WETH = { ...WETH, [137]: '0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270' }
   return useContract(chainId ? _WETH[chainId].address : undefined, WETH_ABI, withSignerIfPossible)
 }
 
