@@ -1,6 +1,6 @@
 {
-  "name": "@uniswap/interface",
-  "description": "Uniswap Interface",
+  "name": "@slowswap/interface",
+  "description": "Slowswap Interface",
   "homepage": ".",
   "private": true,
   "devDependencies": {
