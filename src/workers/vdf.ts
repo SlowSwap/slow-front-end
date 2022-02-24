@@ -17,6 +17,7 @@ interface GenerateVdfInputs {
 const ctx: Worker = self as any
 
 ctx.addEventListener('message', ev => {
+    console.log('foo');
   const data = ev.data as GenerateVdfInputs
   const proof = generateVdf({
     ...data,
