@@ -1,7 +1,7 @@
 {
   "name": "@slowswap/interface",
   "description": "Slowswap Interface",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "homepage": ".",
   "devDependencies": {
     "@ethersproject/experimental": "^5.0.1",
@@ -109,18 +109,6 @@
     "extends": "react-app",
     "ignorePatterns": [
       "node_modules"
-    ]
-  },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
     ]
   },
   "license": "GPL-3.0-or-later",
@@ -241,6 +229,20 @@
   "babel": {
     "presets": [
       "react-app"
+    ]
+},
+"browserslist": {
+    "production": [
+      "chrome >= 67",
+      "edge >= 79",
+      "firefox >= 68",
+      "opera >= 54",
+      "safari >= 14"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
     ]
   }
 }
